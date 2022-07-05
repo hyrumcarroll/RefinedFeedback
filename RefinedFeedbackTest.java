@@ -7,16 +7,16 @@ import java.util.Arrays;
 
 public class RefinedFeedbackTest{
 
-    public static void test( String[] regexes, String submission ){
+    public static void test( String[] regexes, String submission, String[] matches ){
         
         submission = submission.replace("\n", RefinedFeedback.PARAGRAPH_SYMBOL ); // replace all newlines with the pilcrow (paragraph symbol)
         int[][] indices = RefinedFeedback.getMatchingIndices( regexes, submission );
         System.out.println( Arrays.deepToString( indices ) );
-        RefinedFeedback.displayAnnotatedViewed( regexes, submission, indices );
+        RefinedFeedback.displayAnnotatedViewed( regexes, submission, indices, matches );
     }
     
     public static void testCheckingAccount(){
-        String[] regexes = {"Checking", "balance", "checking123", "690.68", "(check|number)", "2124", "Savings", "balance", "savings124", "1,?122.00", "APR", "1.0"};
+        String[] regexes = {"Checking", "balance", "checking123", "690\\.68", "(check|number)", "\\b2124\\b", "Savings", "balance", "savings124", "\\b1,?122.00\\b", "APR", "\\b1\\.0\\b"};
 
         String submission = "Checking Account:\n" +
             "Balance for account checking123: $0.0\n" +
@@ -26,14 +26,17 @@ public class RefinedFeedbackTest{
             "APR: 0.01%\n" +
             "Balance for account checking123: $801.02\n";
 
-        test( regexes, submission );
+
+        String[] matches = {"Checking", "Balance", "checking123", "690.68", "check", "2124", "Savings", "Balance", "savings124", "1,122.00", "APR", "1.0"};
+        
+        test( regexes, submission, matches );
     }
         
 
     public static void testVideoGameChar(){
 
 
-        String[] regexes = {"Welcome", "options", "name", "max", "remaining", "coins", "options", "name", "Human", "Mario", "98.8", "100.0", "98.8", "15", "options", "name", "Human", "Mario", "98.8", "100.0", "98.8", "15", "options", "name", "could not find", "options", "bye"};
+        String[] regexes = {"Welcome", "options", "name", "max", "remaining", "coins", "options", "name", "Human", "Mario", "98\\.8", "100\\.0", "98\\.8", "15", "options", "name", "Human", "Mario", "98\\.8", "100\\.0", "98\\.8", "15", "options", "name", "could not find", "options", "bye"};
 
     
         String submission = "Welcome to you VideoGameChar Manager to store all of the video game characters\n" +
@@ -116,7 +119,7 @@ public class RefinedFeedbackTest{
             "You entered: 9\n" +
             "Good-bye!\n";
 
-        test( regexes, submission );
+        test( regexes, submission, regexes );
     }
     
     public static void main( String[] args ){
