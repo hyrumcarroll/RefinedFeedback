@@ -107,12 +107,12 @@ def displayAnnotatedViewed( regexes, text, indices, answerKeyMatches ):
 
     if numMatches == len(indices):
         # found all matches :)
-        output += f"\n{ALL_MATCHES_FOUND_MSG}\n\n"
+        output += f"\n{ALL_MATCHES_FOUND_MSG}\n"
 
     numMatchesStr = f" ({numMatches} of {len(indices)} matches found)"
-    output += f"Annotated Matches View{numMatchesStr}\n"
-    output += "Matches are uppercased and indicated with *** before and after the match\n"
-    output += "========================================================================\n"
+    output += f"\nAnnotated Matches View{numMatchesStr}\n"
+    output += "(Matches are uppercased and indicated with *** before and after the match)\n"
+    output += "==========================================================================\n"
 
     textStartIndex = -1  # index of the first character in text that matches regex
     textEndIndex   = -1  # index of the last  character in text that matched the last matching regex
@@ -139,16 +139,17 @@ def displayAnnotatedViewed( regexes, text, indices, answerKeyMatches ):
             output += "\n"
         else:
             textStartIndex = indices[regexI][0]  # index of the first character in text that matches regex
-            output += text[textEndIndex + 1 : textStartIndex ]  # copy of text before this match (if any)
+            # copy of text before this match (if any) (and add in pilcrow to visualize the newline)
+            output += text[textEndIndex + 1 : textStartIndex ].replace("\n", PARAGRAPH_SYMBOL + "\n" )
             textEndIndex = indices[regexI][1]  # only update if there was a match so that it is the last matched index
-            output += FLANKING_STR + text[textStartIndex : textEndIndex + 1].upper() + FLANKING_STR  # capitalized matches with flanking strings
+            output += FLANKING_STR + text[textStartIndex : textEndIndex + 1].upper().replace("\n", PARAGRAPH_SYMBOL + "\n" ) + FLANKING_STR  # capitalized matches with flanking strings
 
         DEBUG("output: " + output)
         regexI += 1
 
     output += text[ textEndIndex + 1 : ]  # copy of output until the end
 
-    print( output.replace( PARAGRAPH_SYMBOL, PARAGRAPH_SYMBOL + "\n") + "\n" )
+    print( output )
 
 
 def getMatchingIndices( regexes, text, reFlags=DEFAULT_REGEX_FLAGS ):
@@ -210,7 +211,6 @@ def main():
 
     outputStr = getAllInput()
     DEBUG( f"outputStr ({len(outputStr)} characters): {outputStr}" )
-    outputStr = outputStr.replace("\n", PARAGRAPH_SYMBOL )  # replace all newlines with the pilcrow (paragraph symbol)
 
     # Get indices of matches for each regular expression element (against the submission)
     indices = getMatchingIndices( regexes, outputStr )

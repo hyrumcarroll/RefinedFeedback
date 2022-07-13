@@ -5,9 +5,11 @@
  */
 
 import java.util.Scanner;
+import java.io.Reader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.regex.*;
@@ -42,38 +44,6 @@ public class RefinedFeedback{
     }
 
     /**
-     * Read all of the contents of a file
-     * @param filename Filename to read all of the contents
-     * @return A String with all of the contents of filename
-     */
-    public static String readFileContents( String filename ){
-        StringBuilder fileContents = new StringBuilder();
-        Scanner fileScanner = null;
-        try{
-            // Try to open the file
-            fileScanner = new Scanner( new FileReader( filename ) );
-
-            // Read all lines
-            while( fileScanner.hasNextLine() ){
-                fileContents.append( fileScanner.nextLine() );
-            }
-            /* }catch( FileNotFoundException e ){
-               System.err.println("REFINED FEEDBACK ERROR: " + e.getMessage() );
-               return null; */
-        }catch( Exception e){
-            System.err.println("REFINED FEEDBACK ERROR: " + e.getMessage() );
-            return null;
-        }finally{
-            // Close file
-            if( fileScanner != null ){
-                fileScanner.close();
-            }
-        }
-        return fileContents.toString();
-    }
-
-
-    /**
      * String.repeat() substitution
      * @param str the string to repeat count times
      * @param count number of times to repeat str
@@ -88,18 +58,47 @@ public class RefinedFeedback{
     }
     
     /**
-     * Get all of the input from stdin
+     * Get all of the input 
+     * @param input Input stream (e.g., stdin)
      * @return a string with all of the input from stdin
      */
-    public static String getAllInput( ){
-        StringBuilder input = new StringBuilder();
+    public static String getAllInput( InputStream input ){
+        return getAllInput( new InputStreamReader( input ) );
+    }
+
+    
+    /**
+     * Get all of the input 
+     * @param filename Filename of file to be read
+     * @return a string with all of the input from stdin
+     */
+    public static String getAllInput( String filename ){
+        FileReader fr = null;
         try{
-            BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+            fr = new FileReader( filename );
+        }catch( Exception e){
+            System.err.println("REFINED FEEDBACK ERROR: " + e.getMessage() );
+            return null;
+        }
+        return getAllInput( fr );
+    }
+
+    
+    /**
+     * Get all of the input 
+     * @param reader Input source (e.g., stdin, file object, etc.)
+     * @return a string with all of the input from stdin
+     */
+    public static String getAllInput( Reader reader ){
+        StringBuilder input = new StringBuilder();
+        String ls = System.getProperty("line.separator");
+        try{
+            BufferedReader br = new BufferedReader( reader );
             String line = "";
-            while( (line = stdin.readLine()) != null ){
-                input.append( line + "\n" );
+            while( (line = br.readLine()) != null ){
+                input.append( line + ls );
             }
-            stdin.close();
+            br.close();
         }catch( IOException e){
             e.printStackTrace();
             System.exit(1);
@@ -228,12 +227,12 @@ public class RefinedFeedback{
         
         if( numMatches == indices.length ){
             // found all matches :)
-            output.append( "\n" + ALL_MATCHES_FOUND_MSG + "\n\n");
+            output.append( "\n" + ALL_MATCHES_FOUND_MSG + "\n");
         }
         String numMatchesStr = " ("+numMatches+" of " + indices.length + " matches found)";
-        output.append("Annotated Matches View" + numMatchesStr + "\n");
-        output.append("Matches are uppercased and indicated with *** before and after the match\n");
-        output.append("========================================================================\n");
+        output.append("\nAnnotated Matches View" + numMatchesStr + "\n");
+        output.append("(Matches are uppercased and indicated with *** before and after the match)\n");
+        output.append("==========================================================================\n");
 
         int textStartIndex = -1; // index of the first character in text that matches regex
         int textEndIndex   = -1; // index of the last  character in text that matched the last matching regex
@@ -258,15 +257,16 @@ public class RefinedFeedback{
                 }
                 output.append( "\n" );
             }else{
-                output.append( text.substring( textEndIndex + 1, textStartIndex ) ); // copy of text before this match (if any)
+                // copy of text before this match (if any) (and add in pilcrow to visualize the newline)
+                output.append( text.substring( textEndIndex + 1, textStartIndex ).replace("\n", PARAGRAPH_SYMBOL + "\n" ) );
                 textEndIndex = indices[regexI][1]; // only update if there was a match so that it is the last matched index
-                output.append( FLANKING_STR + text.substring( textStartIndex, textEndIndex + 1).toUpperCase() + FLANKING_STR ); // capitalized matches with flanking strings
+                output.append( FLANKING_STR + text.substring( textStartIndex, textEndIndex + 1).toUpperCase().replace("\n", PARAGRAPH_SYMBOL + "\n" ) + FLANKING_STR ); // capitalized match with flanking strings
             }
             DEBUG("output: " + output);
         }
         output.append( text.substring( textEndIndex + 1, text.length() ) ); // copy of output until the end
         
-        System.out.println( output.toString().replace( PARAGRAPH_SYMBOL, PARAGRAPH_SYMBOL + "\n") + "\n" );
+        System.out.println( output.toString() );
     }
 
     
@@ -280,7 +280,8 @@ public class RefinedFeedback{
         }
 
         // Read in answer key file 
-        String answerKey = readFileContents( args[0] );
+        String answerKey = getAllInput( args[0] );
+        DEBUG( "answerKey: " + answerKey);
         
         // Copy the rest of the command-line arguments (the regexes) 
         String[] regexes = Arrays.copyOfRange( args, 1, args.length );
@@ -289,9 +290,8 @@ public class RefinedFeedback{
 
         String[] answerKeyMatches = getAnswerKeyMatches( regexes, answerKey );
         
-        String outputStr = getAllInput();
+        String outputStr = getAllInput( new InputStreamReader(System.in) );
         DEBUG( "outputStr (" + outputStr.length() + " characters): " + outputStr);
-        outputStr = outputStr.replace("\n", PARAGRAPH_SYMBOL ); // replace all newlines with the pilcrow (paragraph symbol)
         
         // Get indices of matches for each regular expression element (against the submission)
         int[][] indices = getMatchingIndices( regexes, outputStr );
