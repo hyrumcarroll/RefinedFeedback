@@ -206,13 +206,14 @@ public class RefinedFeedback{
     
     
     /**
-     * Display the annotated view (matches indicated with UPPERCASE letters and flanked by ***) 
+     * Generate the annotated view (matches indicated with UPPERCASE letters and flanked by ***) 
      * @param regexes Ordered list of regular expressions
      * @param text Student's submission
      * @param indices First and last indices of matches of the regular expressions in regexes in text
      * @param answerKeyMatches Matches for the regexes from the answer key (for displaying if the regex is not found in the text)
+     * @return A string with the full annotated view
      */
-    public static void displayAnnotatedViewed( String[] regexes, String text, int[][] indices, String[] answerKeyMatches ){
+    public static String getAnnotatedView( String[] regexes, String text, int[][] indices, String[] answerKeyMatches ){
         assert regexes.length == indices.length : "Number of regexes + ("+regexes.length+ ") differs from the number of indices of those matches ("+indices.length+")";
         
         StringBuilder output = new StringBuilder(); // For matches captialized and flanked with ***
@@ -236,6 +237,7 @@ public class RefinedFeedback{
 
         int textStartIndex = -1; // index of the first character in text that matches regex
         int textEndIndex   = -1; // index of the last  character in text that matched the last matching regex
+        StringBuilder missingStr = new StringBuilder(); // lines to be added to the output with missed matches
         for(int regexI = 0; regexI < regexes.length; ++regexI){
             String regexStr = "";
             if( DEBUG ){ regexStr = " (" + regexes[regexI] + ")";  }
@@ -245,28 +247,32 @@ public class RefinedFeedback{
                 // no match found for this regex
                 String answerKeyMatch = answerKeyMatches[regexI];
                 if( regexI != 0 ){
-                    output.append("\n");
+                    missingStr.append("\n");
                 }
-                output.append( "\nMissing: " + answerKeyMatch + regexStr + "\n");
+                missingStr.append( "\nMissing: " + answerKeyMatch + regexStr + "\n");
                 // Continue to display other missing regexes without the extra newline 
                 while( regexI + 1 < regexes.length && indices[regexI + 1][0] < 0){
                     ++regexI;
                     if( DEBUG ){ regexStr = " (" + regexes[regexI] + ")";  }
                     answerKeyMatch = answerKeyMatches[regexI];
-                    output.append( "Missing: " + answerKeyMatch + regexStr + "\n");
+                    missingStr.append( "Missing: " + answerKeyMatch + regexStr + "\n");
                 }
-                output.append( "\n" );
+                missingStr.append( "\n" );
             }else{
                 // copy of text before this match (if any) (and add in pilcrow to visualize the newline)
                 output.append( text.substring( textEndIndex + 1, textStartIndex ).replace("\n", PARAGRAPH_SYMBOL + "\n" ) );
+                // add in lines about missed matches, if any
+                output.append( missingStr );
+                missingStr.setLength(0); // clear out
                 textEndIndex = indices[regexI][1]; // only update if there was a match so that it is the last matched index
                 output.append( FLANKING_STR + text.substring( textStartIndex, textEndIndex + 1).toUpperCase().replace("\n", PARAGRAPH_SYMBOL + "\n" ) + FLANKING_STR ); // capitalized match with flanking strings
             }
             DEBUG("output: " + output);
         }
         output.append( text.substring( textEndIndex + 1, text.length() ) ); // copy of output until the end
+        output.append( missingStr );
         
-        System.out.println( output.toString() );
+        return output.toString();
     }
 
     
@@ -299,6 +305,7 @@ public class RefinedFeedback{
         /*
          * Display the annotated output (with flanking "***"s and capitalized matches)
          */
-        displayAnnotatedViewed( regexes, outputStr, indices, answerKeyMatches );
+        String annotatedView = getAnnotatedView( regexes, outputStr, indices, answerKeyMatches );
+        System.out.println( annotatedView );
     }
 }

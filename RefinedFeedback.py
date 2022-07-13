@@ -86,14 +86,15 @@ def getAnswerKeyMatches( regexes, answerKey=None, flags=DEFAULT_REGEX_FLAGS):
     return matches
 
 
-def displayAnnotatedViewed( regexes, text, indices, answerKeyMatches ):
+def getAnnotatedView( regexes, text, indices, answerKeyMatches ):
     """
-    Display the annotated view (matches indicated with UPPERCASE letters and flanked by ***)
+    Generate the annotated view (matches indicated with UPPERCASE letters and flanked by ***)
 
     regexes is an ordered list of regular expressions.
     text is a student's submissionl
     indices are a list of tuples with the first and last indices of matches of the regular expressions in regexes in text.
     answerKeyMatches are the matches for the regexes from the answer key (for displaying if the regex is not found in the text).
+    Returns a string with the full annotated view.
     """
 
     if len(regexes) != len(indices):
@@ -117,6 +118,7 @@ def displayAnnotatedViewed( regexes, text, indices, answerKeyMatches ):
     textStartIndex = -1  # index of the first character in text that matches regex
     textEndIndex   = -1  # index of the last  character in text that matched the last matching regex
     regexI = 0
+    missingStr = '' # lines to be added to the output with missed matches
     while regexI < len(regexes):
         regexStr = ""
         if DEBUG_FLAG: regexStr = f" ({regexes[regexI]})"
@@ -125,22 +127,25 @@ def displayAnnotatedViewed( regexes, text, indices, answerKeyMatches ):
             # no match found for this regex
             answerKeyMatch = answerKeyMatches[regexI]
             if regexI != 0:
-                output += "\n"
+                missingStr += "\n"
 
-            output += f"\nMissing: {answerKeyMatch}{regexStr}\n"
+            missingStr += f"\nMissing: {answerKeyMatch}{regexStr}\n"
 
             # Continue to display other missing regexes without the extra newline
             while regexI + 1 < len(regexes) and indices[regexI + 1] is None:
                 regexI += 1
                 if DEBUG_FLAG: regexStr = f" ({regexes[regexI]})"
                 answerKeyMatch = answerKeyMatches[regexI]
-                output += f"Missing: {answerKeyMatch}{regexStr}\n"
+                missingStr += f"Missing: {answerKeyMatch}{regexStr}\n"
 
-            output += "\n"
+            missingStr += "\n"
         else:
             textStartIndex = indices[regexI][0]  # index of the first character in text that matches regex
             # copy of text before this match (if any) (and add in pilcrow to visualize the newline)
             output += text[textEndIndex + 1 : textStartIndex ].replace("\n", PARAGRAPH_SYMBOL + "\n" )
+            # add in lines about missed matches, if any
+            output += missingStr
+            missingStr = ''
             textEndIndex = indices[regexI][1]  # only update if there was a match so that it is the last matched index
             output += FLANKING_STR + text[textStartIndex : textEndIndex + 1].upper().replace("\n", PARAGRAPH_SYMBOL + "\n" ) + FLANKING_STR  # capitalized matches with flanking strings
 
@@ -148,8 +153,9 @@ def displayAnnotatedViewed( regexes, text, indices, answerKeyMatches ):
         regexI += 1
 
     output += text[ textEndIndex + 1 : ]  # copy of output until the end
+    output += missingStr
 
-    print( output )
+    return output
 
 
 def getMatchingIndices( regexes, text, reFlags=DEFAULT_REGEX_FLAGS ):
@@ -217,7 +223,8 @@ def main():
 
 
     # Display the annotated output (with flanking "***"s and capitalized matches)
-    displayAnnotatedViewed( regexes, outputStr, indices, answerKeyMatches )
+    annotatedView = getAnnotatedView( regexes, outputStr, indices, answerKeyMatches )
+    print( annotatedView )
 
 
 if __name__ == '__main__':
