@@ -2,9 +2,10 @@
 
 import re
 import sys
+import argparse
 
-USAGE = """Usage:  <answer key output>  <regex>[ <regex> ...]
-           (with stdin containing the output to match up with the regex)"""
+#USAGE = """[-answer <answer key output filename>]  [-explanations <explanations filename>]  <regex>[ <regex> ...]
+#           (with stdin containing the output to match up with the regex)"""
 FLANKING_STR = "***" # string appearing before and after matches
 
 PARAGRAPH_SYMBOL = "\u00B6"  # ¶, pilcrow (paragraph) symbol
@@ -30,7 +31,8 @@ def readFileContents( filename: str ) -> str:
         fileContents = fileObj.read()
         fileObj.close()
     except BaseException as err:
-        print(f"REFINED FEEDBACK ERROR: {err=}, {type(err)=}")
+        #print(f"REFINED FEEDBACK ERROR: {err=}, {type(err)=}")
+        print(f"REFINED FEEDBACK ERROR: {err}, {type(err)}")
         return None
     
     return fileContents
@@ -111,8 +113,10 @@ def getAnnotatedView( regexes, text, indices, answerKeyMatches ):
         output += f"\n{ALL_MATCHES_FOUND_MSG}\n"
 
     numMatchesStr = f" ({numMatches} of {len(indices)} matches found)"
-    output += f"\nAnnotated Matches View{numMatchesStr}\n"
+    #output += f"\nAnnotated Matches View{numMatchesStr}\n"
+    output += f"\nOutput with Matches and Missing Items{numMatchesStr}\n"
     output += "(Matches are uppercased and indicated with *** before and after the match)\n"
+    output += "(Terms that are missing are identified with '<<< Missing: [the missing item] >>>')\n";
     output += "==========================================================================\n"
 
     textStartIndex = -1  # index of the first character in text that matches regex
@@ -129,14 +133,14 @@ def getAnnotatedView( regexes, text, indices, answerKeyMatches ):
             if regexI != 0:
                 missingStr += "\n"
 
-            missingStr += f"\nMissing: {answerKeyMatch}{regexStr}\n"
+            missingStr += f"\n<<< Missing: {answerKeyMatch}{regexStr} >>>\n"
 
             # Continue to display other missing regexes without the extra newline
             while regexI + 1 < len(regexes) and indices[regexI + 1] is None:
                 regexI += 1
                 if DEBUG_FLAG: regexStr = f" ({regexes[regexI]})"
                 answerKeyMatch = answerKeyMatches[regexI]
-                missingStr += f"Missing: {answerKeyMatch}{regexStr}\n"
+                missingStr += f"<<< Missing: {answerKeyMatch}{regexStr} >>>\n"
 
             missingStr += "\n"
         else:
@@ -197,33 +201,75 @@ def getMatchingIndices( regexes, text, reFlags=DEFAULT_REGEX_FLAGS ):
     return matches
 
 
-def main():
-    # Get the regular expression from the command-line
+def updateAnswerKeyMatches( answerKeyMatches, explanationsFilename ) -> None:
 
-    if len(sys.argv) < 2:
-        print(f"ERROR: Only found {len(sys.argv)} command-line arguments!\n", file=sys.stderr)
-        print(f"\n{USAGE}\n", file=sys.stderr)
-        sys.exit(1)
+    #print(f'updateAnswerKeyMatches( {answerKeyMatches}, {explanationsFilename} )')
+    
+    # make sure the filename has at least 1 character
+    if len(explanationsFilename) == 0:
+        return
+    
+    explanationsFileContents = readFileContents( explanationsFilename )
+    # print(f'explanationsFileContents: {explanationsFileContents}.')
+    if explanationsFileContents.endswith('\n'):
+        # if the last character is a newline, then remove it
+        explanationsFileContents = explanationsFileContents[:-1]
+        
+    explanationsStrs = explanationsFileContents.split( '\n' ) # assumes that each explanation string is on its own line
+    if len(explanationsStrs) > len(answerKeyMatches):
+        print(f'ERROR: Found more explanation strings ({len(explanationsStrs)}) than answer key items / regular expressions ({len(answerKeyMatches)})!', file=sys.stderr)
+        sys.exit()
+        
+    for i in range(len(explanationsStrs)):
+        eStr = explanationsStrs[i]
+        if len( eStr ):
+            # update only non-empty explanation strings
+            DEBUG( f'Updating answer key at position {i+1} ("{answerKeyMatches[i]}") with "{eStr}"')
+            answerKeyMatches[i] = explanationsStrs[i]
 
 
-    # Read in answer key file
-    answerKey = readFileContents( sys.argv[1] )
+def init_argparse() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        #usage=f'{USAGE}',
+        description='Compare the output of stdin with the regular expressions (using the answer key and/or explanations file to describe what was expected)',
+    )
+    parser.add_argument(
+        '-v', '--version', action='version',
+        version=f'{parser.prog} version 2.1.0'
+    )
+    parser.add_argument('--answer', dest='answerKeyFilename', type=str, required=False)
+    parser.add_argument('--explanations', dest='explanationsFilename', type=str)
+    parser.add_argument('regexes', nargs="+", type=str)
+    return parser
 
-    # Copy the rest of the command-line arguments (the regexes)
-    regexes = sys.argv[ 2 : ]
-    DEBUG(f"regexes: {regexes}")
+def main() -> None:
+    parser = init_argparse()
+    args = parser.parse_args()
 
-    answerKeyMatches = getAnswerKeyMatches( regexes, answerKey )
+    # print(args)
+    
+    # if the answer key was passed in, then read in the answer key file
+    answerKey=None
+    if args.answerKeyFilename:
+        # Read in answer key file
+        answerKey = readFileContents( args.answerKeyFilename )
 
+    answerKeyMatches = getAnswerKeyMatches( args.regexes, answerKey )
+
+    # if the file with the explanations for each of the terms is passed in, then override the answerKeyMatches
+    if args.explanationsFilename:
+        updateAnswerKeyMatches( answerKeyMatches, args.explanationsFilename )
+
+                   
     outputStr = getAllInput()
     DEBUG( f"outputStr ({len(outputStr)} characters): {outputStr}" )
 
     # Get indices of matches for each regular expression element (against the submission)
-    indices = getMatchingIndices( regexes, outputStr )
+    indices = getMatchingIndices( args.regexes, outputStr )
 
 
     # Display the annotated output (with flanking "***"s and capitalized matches)
-    annotatedView = getAnnotatedView( regexes, outputStr, indices, answerKeyMatches )
+    annotatedView = getAnnotatedView( args.regexes, outputStr, indices, answerKeyMatches )
     print( annotatedView )
 
 
