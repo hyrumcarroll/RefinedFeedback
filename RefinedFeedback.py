@@ -61,7 +61,7 @@ def getAnswerKeyMatches( regexes, answerKey=None, flags=DEFAULT_REGEX_FLAGS):
     
     # If there's no answer key, just use the regexes
     if answerKey is None:
-        return regexes
+        return list(regexes)
 
     matches = [ None ] * len(regexes)
     
@@ -105,7 +105,7 @@ def getAnnotatedView( regexes, text, indices, answerKeyMatches ):
 
     output = '' # For matches captialized and flanked with ***
 
-    # Figure out if there are no matches, at least one or everything matches
+    # Calculate the number of matches
     numMatches = len(indices) - indices.count(None)
 
     if numMatches == len(indices):
@@ -246,7 +246,8 @@ def main() -> None:
     parser = init_argparse()
     args = parser.parse_args()
 
-    # print(args)
+    regexes = list(args.regexes)
+    print(args)
     
     # if the answer key was passed in, then read in the answer key file
     answerKey=None
@@ -254,22 +255,20 @@ def main() -> None:
         # Read in answer key file
         answerKey = readFileContents( args.answerKeyFilename )
 
-    answerKeyMatches = getAnswerKeyMatches( args.regexes, answerKey )
+    answerKeyMatches = getAnswerKeyMatches( regexes, answerKey )
 
     # if the file with the explanations for each of the terms is passed in, then override the answerKeyMatches
     if args.explanationsFilename:
         updateAnswerKeyMatches( answerKeyMatches, args.explanationsFilename )
-
-                   
+    
     outputStr = getAllInput()
     DEBUG( f"outputStr ({len(outputStr)} characters): {outputStr}" )
 
     # Get indices of matches for each regular expression element (against the submission)
-    indices = getMatchingIndices( args.regexes, outputStr )
-
+    indices = getMatchingIndices( regexes, outputStr )
 
     # Display the annotated output (with flanking "***"s and capitalized matches)
-    annotatedView = getAnnotatedView( args.regexes, outputStr, indices, answerKeyMatches )
+    annotatedView = getAnnotatedView( regexes, outputStr, indices, answerKeyMatches )
     print( annotatedView )
 
 
