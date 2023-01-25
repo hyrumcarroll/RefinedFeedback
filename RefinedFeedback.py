@@ -247,7 +247,6 @@ def main() -> None:
     args = parser.parse_args()
 
     regexes = list(args.regexes)
-    print(args)
     
     # if the answer key was passed in, then read in the answer key file
     answerKey=None
