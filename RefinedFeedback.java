@@ -1,7 +1,7 @@
 /**
  * Marks up supplied output according to how it matched supplied regular expressions (regexes).
  * @author Hyrum D. Carroll
- * @version 0.5 (Jun 22, 2022)
+ * @version 2.3, 09/11/23
  */
 
 import java.util.Scanner;
@@ -16,7 +16,7 @@ import java.util.regex.*;
 
 public class RefinedFeedback{
 
-    private final static String USAGE = "Usage:  <answer key output>  <regex>[ <regex> ...] (with stdin containing the output to match up with the regex)";
+    protected final static String USAGE = "Usage:  [--answer <answer key output filename>] [--explanations <explanations filename (English descriptions on their own line)>]  <regex>[ <regex> ...] (with stdin containing the output to match up with the regex)";
     public final static String FLANKING_STR = "***";  // string appearing before and after matches
 
     public final static String PARAGRAPH_SYMBOL = "\u00B6"; // ¶, pilcrow (paragraph) symbol
@@ -24,9 +24,9 @@ public class RefinedFeedback{
     public final static String ALL_MATCHES_FOUND_MSG = "All matches found!  Great job!";  
     public final static String NO_MATCHES_FOUND_MSG = "No matches found :(";
 
-    private final static int DEFAULT_REGEX_FLAGS = Pattern.CASE_INSENSITIVE;  // if flags are not specified, then use this/these flags
+    protected final static int DEFAULT_REGEX_FLAGS = Pattern.CASE_INSENSITIVE;  // if flags are not specified, then use this/these flags
 
-    private final static boolean DEBUG = false;
+    protected static boolean DEBUG = false;
 
     public static void DEBUG( String msg ){
         if( DEBUG ){
@@ -122,7 +122,7 @@ public class RefinedFeedback{
      * @param regexes Ordered list of regular expressions
      * @param text Text to look for matches in
      * @param flags Flags to be used for each match
-     * @return An array of two-element arrays with each two-element containing the index of first and last matching characters in the corresponding regex from the parameter list.  If a regex is not found, the element is set to -1.
+     * @return An array of two-element arrays with each two-element array containing the index of first and last matching characters in the corresponding regex from the parameter list.  If a regex is not found, the elements are set to -1.
      */
     public static int[][] getMatchingIndices( String[] regexes, String text, int flags ){
         //System.out.println("getMatchingIndices(regexes,"+text+","+flags+")");
@@ -203,6 +203,46 @@ public class RefinedFeedback{
         }
         return matches;
     }
+
+
+    /**
+     * For each non-empty/blank line in explanationsFilename, replace the cooresponding elemetn in answerKeyMatches
+     * @param answerKeyMatches Current answer key matches
+     * @param explanationsFilename Filename for file with regex explanations (one on each line)
+     */
+    public static void updateAnswerKeyMatches( String[] answerKeyMatches, String explanationsFilename ){
+
+        // System.err.println("updateAnswerKeyMatches( "+answerKeyMatches+", " + explanationsFilename+ " )");
+    
+        // make sure the filename has at least 1 character
+        if( explanationsFilename == null || explanationsFilename.length() == 0){
+            return;
+        }
+    
+        String explanationsFileContents = getAllInput( explanationsFilename );
+        //System.err.println("explanationsFileContents: "+explanationsFileContents);
+        
+        if( explanationsFileContents.endsWith("\n") ){
+            // if the last character is a newline, then remove it
+            explanationsFileContents = explanationsFileContents.substring(0, explanationsFileContents.length() - 1);
+        }
+        
+        String[] explanationsStrs = explanationsFileContents.split( "\n" ); // assumes that each explanation string is on its own line
+        if( explanationsStrs.length > answerKeyMatches.length ){
+            System.err.println("ERROR: Found more explanation strings ("+explanationsStrs.length+") than answer key items / regular expressions ("+answerKeyMatches.length+")!");
+            System.exit(1);
+        }
+        
+        for(int i = 0; i < explanationsStrs.length; ++i){
+            String eStr = explanationsStrs[i];
+            if( eStr.length() > 0 ){
+                // update only non-empty explanation strings
+                DEBUG( "Updating answer key at position "+(i+1)+" (\""+answerKeyMatches[i]+"\") with \""+eStr+"\"");
+                answerKeyMatches[i] = explanationsStrs[i];
+            }
+        }
+    }
+
     
     
     /**
@@ -275,26 +315,70 @@ public class RefinedFeedback{
         return output.toString();
     }
 
+    /**
+     * Looks for the element after arg in args (e.g., command-line arguments)
+     * @param arg The element to anchor off of in args
+     * @param args Elements to look through
+     * @return The element after arg if found and null otherwise
+     */
+    public static String getArgTrailer( String arg, String[] args ){
+        int argIndex = 0;
+        while( argIndex < args.length ){
+            if( args[argIndex].equals( arg ) ){
+                if( argIndex + 1 >= args.length ){
+                    System.err.println("ERROR: Missing required portion following " + arg );
+                    System.exit(1);
+                }else{
+                    return args[argIndex + 1];
+                }
+            }
+            argIndex++;
+        }
+        return null; // not found
+    }
     
     public static void main( String[] args ){
+
+
         /* Get the regular expression from the command-line */
 
-        if( args.length < 2 ){
-            System.err.println("ERROR: Only found " + args.length + " command-line arguments!\n");
+        String answerKeyFilename = getArgTrailer( "--answer", args );
+        String explanationsFilename  = getArgTrailer( "--explanations", args );
+
+        // calculate the index where the regexes start (assuming that the above optional args are before the regexes)
+        int regexArgsStartIndex = 0;
+        if( answerKeyFilename != null ){
+            regexArgsStartIndex += 2;
+        }
+        if( explanationsFilename != null ){
+            regexArgsStartIndex += 2;
+        }
+        
+        if( regexArgsStartIndex >= args.length ){
+            System.err.println("ERROR: No regexes found from command-line arguments!\n");
             System.err.println("\n" + USAGE + "\n");
             System.exit(1);
         }
 
-        // Read in answer key file 
-        String answerKey = getAllInput( args[0] );
-        DEBUG( "answerKey: " + answerKey);
-        
         // Copy the rest of the command-line arguments (the regexes) 
-        String[] regexes = Arrays.copyOfRange( args, 1, args.length );
-        DEBUG("regexes:");
+        String[] regexes = Arrays.copyOfRange( args, regexArgsStartIndex, args.length );
+        DEBUG("regexes (starting from command-line argument index " + regexArgsStartIndex + "):");
         DEBUG(regexes);
 
+        // if the answer key was passed in, then read in the answer key file
+        String answerKey = null;
+        if( answerKeyFilename != null ){
+            // Read in answer key file
+            answerKey = getAllInput( answerKeyFilename );
+        }
+        DEBUG( "answerKey: " + answerKey);
+        
         String[] answerKeyMatches = getAnswerKeyMatches( regexes, answerKey );
+
+        // if the file with the explanations for each of the terms is passed in, then override the answerKeyMatches
+        if( explanationsFilename != null ){
+            updateAnswerKeyMatches( answerKeyMatches, explanationsFilename );
+        }
         
         String outputStr = getAllInput( new InputStreamReader(System.in) );
         DEBUG( "outputStr (" + outputStr.length() + " characters): " + outputStr);
@@ -305,7 +389,8 @@ public class RefinedFeedback{
         /*
          * Display the annotated output (with flanking "***"s and capitalized matches)
          */
-        String annotatedView = getAnnotatedView( regexes, outputStr, indices, answerKeyMatches );
-        System.out.println( annotatedView );
+        String output = getAnnotatedView( regexes, outputStr, indices, answerKeyMatches );
+        output = output.replace("\\", "\\\\");  // codePost does not display output if it has an unescaped \ in it :(
+        System.out.println( output );
     }
 }
