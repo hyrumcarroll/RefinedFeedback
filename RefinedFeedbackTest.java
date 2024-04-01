@@ -9,10 +9,9 @@ public class RefinedFeedbackTest{
 
     public static void test( String[] regexes, String submission, String[] matches ){
         
-        submission = submission.replace("\n", RefinedFeedback.PARAGRAPH_SYMBOL ); // replace all newlines with the pilcrow (paragraph symbol)
         int[][] indices = RefinedFeedback.getMatchingIndices( regexes, submission );
-        System.out.println( Arrays.deepToString( indices ) );
-        RefinedFeedback.displayAnnotatedViewed( regexes, submission, indices, matches );
+        System.out.println( "DEBUGGING: Indices: " + Arrays.deepToString( indices ) );
+        System.out.println( RefinedFeedback.getAnnotatedView( regexes, submission, indices, matches ) );
     }
     
     public static void testCheckingAccount(){

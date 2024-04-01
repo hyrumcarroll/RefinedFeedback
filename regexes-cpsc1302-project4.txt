@@ -1,0 +1,1 @@
+"Welcome" "options" "name" "max" "remaining" "coins" "options" "name" "Human" "Mario" "98\\.8" "100\\.0" "98\\.8" "15" "options" "name" "Human" "Mario" "98\\.8" "100\\.0" "98\\.8" "15" "options" "name" "could not find" "options" "bye"

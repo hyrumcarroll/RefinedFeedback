@@ -118,7 +118,7 @@ public class RefinedFeedback{
     }
     
     /**
-     * Finds the indices of the first non-overlapping match in the supplied text for each regex in regexes (ignoring casing).
+     * Finds the indices of the first non-overlapping match in the supplied text for each regex in regexes (according to the supplied flags).
      * @param regexes Ordered list of regular expressions
      * @param text Text to look for matches in
      * @param flags Flags to be used for each match
@@ -273,6 +273,7 @@ public class RefinedFeedback{
         String numMatchesStr = " ("+numMatches+" of " + indices.length + " matches found)";
         output.append("\nAnnotated Matches View" + numMatchesStr + "\n");
         output.append("(Matches are uppercased and indicated with *** before and after the match)\n");
+        output.append("(Terms that are missing are identified with '<<< Missing: [the missing item] >>>')\n");        
         output.append("==========================================================================\n");
 
         int textStartIndex = -1; // index of the first character in text that matches regex
@@ -289,13 +290,13 @@ public class RefinedFeedback{
                 if( regexI != 0 ){
                     missingStr.append("\n");
                 }
-                missingStr.append( "\nMissing: " + answerKeyMatch + regexStr + "\n");
+                missingStr.append( "\n<<< Missing: " + answerKeyMatch + regexStr + ">>>\n");
                 // Continue to display other missing regexes without the extra newline 
                 while( regexI + 1 < regexes.length && indices[regexI + 1][0] < 0){
                     ++regexI;
                     if( DEBUG ){ regexStr = " (" + regexes[regexI] + ")";  }
                     answerKeyMatch = answerKeyMatches[regexI];
-                    missingStr.append( "Missing: " + answerKeyMatch + regexStr + "\n");
+                    missingStr.append( "\n<<< Missing: " + answerKeyMatch + regexStr + ">>>\n");
                 }
                 missingStr.append( "\n" );
             }else{
