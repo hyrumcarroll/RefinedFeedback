@@ -110,7 +110,7 @@ public class RefinedFeedback{
     /**
      * Finds the indices of the first non-overlapping match in the supplied text for each regex in regexes (ignoring casing).
      * @param regexes Ordered list of regular expressions
-     * @param text Text to look for matches in
+     * @param text Text to look for matches in (e.g., output of a student's submission)
      * @return An array of two-element arrays with each two-element containing the index of first and last matching characters in the corresponding regex from the parameter list.  If a regex is not found, the element is set to -1.
      */
     public static int[][] getMatchingIndices( String[] regexes, String text ){
@@ -120,7 +120,7 @@ public class RefinedFeedback{
     /**
      * Finds the indices of the first non-overlapping match in the supplied text for each regex in regexes (according to the supplied flags).
      * @param regexes Ordered list of regular expressions
-     * @param text Text to look for matches in
+     * @param text Text to look for matches in (e.g., output of a student's submission)
      * @param flags Flags to be used for each match
      * @return An array of two-element arrays with each two-element array containing the index of first and last matching characters in the corresponding regex from the parameter list.  If a regex is not found, the elements are set to -1.
      */
@@ -248,7 +248,7 @@ public class RefinedFeedback{
     /**
      * Generate the annotated view (matches indicated with UPPERCASE letters and flanked by ***) 
      * @param regexes Ordered list of regular expressions
-     * @param text Student's submission
+     * @param text Text to look for matches in (e.g., output of a student's submission)
      * @param indices First and last indices of matches of the regular expressions in regexes in text
      * @param answerKeyMatches Matches for the regexes from the answer key (for displaying if the regex is not found in the text)
      * @return A string with the full annotated view
@@ -258,7 +258,7 @@ public class RefinedFeedback{
         
         StringBuilder output = new StringBuilder(); // For matches captialized and flanked with ***
 
-        // Figure out if there are no matches, at least one or everything matches
+        // Figure out if 1) there are no matches, 2) at least one or 3) everything matches
         int numMatches = 0;
         for( int i = 0; i < indices.length; ++i){
             if( indices[i][0] >= 0 ){
