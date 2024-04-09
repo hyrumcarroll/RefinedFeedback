@@ -1,7 +1,7 @@
 /**
  * Test cases for RefinedFeedback
  * @author Hyrum D. Carroll
- * @version 0.1 (Jun 22, 2022)
+ * @version 0.2 (Apr 9, 2024)
  */
 import java.util.Arrays;
 
@@ -27,6 +27,27 @@ public class RefinedFeedbackTest{
 
 
         String[] matches = {"Checking", "Balance", "checking123", "690.68", "check", "2124", "Savings", "Balance", "savings124", "1,122.00", "APR", "1.0"};
+        
+        test( regexes, submission, matches );
+    }
+
+    // Modification of testCheckingAccount.  Notice that "account manager" is one of the regexes, but does not appear in the submission texst until near the end.  See testCheckingAccount2.txt for an ideal output.
+    public static void testCheckingAccount2(){
+        String[] regexes = {"account manager", "Checking", "balance", "checking123", "690\\.68", "(check|number)", "\\b2124\\b", "Savings", "balance", "savings124", "\\b1,?122.00\\b", "APR", "\\b1\\.0\\b", "Thank"};
+
+        String submission = "Welcome to my manager of accounts!\n" +
+            "Checking Account:\n" +
+            "Balance for account checking123: $0.0\n" +
+            "Last processed check number:2124\n" +
+            "Savings Account: \n" +
+            "Balance for account savings124: $0.0\n" +
+            "APR: 0.01%\n" +
+            "Balance for account checking123: $801.02\n" +
+            "Exiting the Account Manager\n" + 
+            "Thank-you";
+
+
+        String[] matches = {"Account Manager", "Checking", "Balance", "checking123", "690.68", "check", "2124", "Savings", "Balance", "savings124", "1,122.00", "APR", "1.0", "Thank"};
         
         test( regexes, submission, matches );
     }
@@ -123,6 +144,7 @@ public class RefinedFeedbackTest{
     
     public static void main( String[] args ){
         testCheckingAccount();
+        testCheckingAccount2();
         testVideoGameChar();
     }
 }
