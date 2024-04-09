@@ -1,0 +1,27 @@
+Annotated Matches View (10 of 14 matches found)
+(Matches are uppercased and indicated with *** before and after the match)
+(Terms that are missing are identified with '<<< Missing: [the missing item] >>>')
+==========================================================================
+<<< Missing: account manager>>>
+
+***CHECKING*** Account:¶
+***BALANCE*** for account ***CHECKING123***: $0.0¶
+Last processed 
+
+<<< Missing: 690.68>>>
+
+***CHECK*** number:***2124***¶
+***SAVINGS*** Account: ¶
+***BALANCE*** for account ***SAVINGS124***: $0.0¶
+
+
+<<< Missing: 1,122.00>>>
+
+***APR***: 0.01%
+Balance for account checking123: $801.02
+Exiting the Account Manager
+
+
+<<< Missing: 1.0>>>
+
+***THANK***-you
