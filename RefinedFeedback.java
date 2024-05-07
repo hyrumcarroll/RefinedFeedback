@@ -1,7 +1,7 @@
 /**
  * Marks up supplied output according to how it matched supplied regular expressions (regexes).
  * @author Hyrum D. Carroll
- * @version 2.3, 09/11/23
+ * @version 2.4, (Apr 9, 2024)
  */
 
 import java.util.Scanner;
@@ -290,13 +290,13 @@ public class RefinedFeedback{
                 if( regexI != 0 ){
                     missingStr.append("\n");
                 }
-                missingStr.append( "\n<<< Missing: " + answerKeyMatch + regexStr + ">>>\n");
+                missingStr.append( "\n<<< Missing: " + answerKeyMatch + regexStr + " >>>\n");
                 // Continue to display other missing regexes without the extra newline 
                 while( regexI + 1 < regexes.length && indices[regexI + 1][0] < 0){
                     ++regexI;
                     if( DEBUG ){ regexStr = " (" + regexes[regexI] + ")";  }
                     answerKeyMatch = answerKeyMatches[regexI];
-                    missingStr.append( "\n<<< Missing: " + answerKeyMatch + regexStr + ">>>\n");
+                    missingStr.append( "\n<<< Missing: " + answerKeyMatch + regexStr + " >>>\n");
                 }
                 missingStr.append( "\n" );
             }else{
