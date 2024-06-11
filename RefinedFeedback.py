@@ -202,7 +202,8 @@ def getMatchingIndices( regexes, text, reFlags=DEFAULT_REGEX_FLAGS ):
 
 
 def updateAnswerKeyMatches( answerKeyMatches, explanationsFilename ) -> None:
-
+    """For each non-empty/blank line in explanationsFilename, replace the cooresponding element in answerKeyMatches"""
+    
     #print(f'updateAnswerKeyMatches( {answerKeyMatches}, {explanationsFilename} )')
     
     # make sure the filename has at least 1 character
@@ -231,11 +232,11 @@ def updateAnswerKeyMatches( answerKeyMatches, explanationsFilename ) -> None:
 def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         #usage=f'{USAGE}',
-        description='Compare the output of stdin with the regular expressions (using the answer key and/or explanations file to describe what was expected)',
+        description='Compare the output of stdin with the regular expressions (using the answer key and/or explanations file to describe what was expected).',
     )
     parser.add_argument(
         '-v', '--version', action='version',
-        version=f'{parser.prog} version 2.1.0'
+        version=f'{parser.prog} 2.1.0'
     )
     parser.add_argument('--answer', dest='answerKeyFilename', type=str, required=False)
     parser.add_argument('--explanations', dest='explanationsFilename', type=str)
@@ -268,6 +269,8 @@ def main() -> None:
 
     # Display the annotated output (with flanking "***"s and capitalized matches)
     annotatedView = getAnnotatedView( regexes, outputStr, indices, answerKeyMatches )
+    
+    annotatedView = annotatedView.replace("\\", "\\\\")  # codePost does not display output if it has an unescaped \ in it :(
     print( annotatedView )
 
 
